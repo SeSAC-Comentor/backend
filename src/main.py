@@ -6,6 +6,7 @@ from src.app.schemas.comment import (
     CommentFeedbackResponse,
 )
 from src.app.services.comment_service import CommentService
+from src.app.core.middlewares.cors import setup_cors
 
 app = FastAPI(
     title="Commento Mock API",
@@ -14,6 +15,8 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc"
 )
+
+setup_cors(app)
 
 @app.get("/")
 async def health_check():
