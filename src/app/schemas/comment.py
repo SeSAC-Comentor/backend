@@ -20,6 +20,7 @@ class CommentFeedbackResponse(BaseModel):
     confidence: float
     issue_count: int
     reason: str
+    all_labels: list[dict]  # 추가: 원본 라벨과 점수
 
     @classmethod
     def from_classification(cls, classification: dict, reason: str):
@@ -30,5 +31,6 @@ class CommentFeedbackResponse(BaseModel):
             problem_types=classification["problem_types"],
             confidence=classification["confidence"],
             issue_count=classification["issue_count"],
-            reason=reason
+            reason=reason,
+            all_labels=classification["all_labels"]  # 추가
         )
