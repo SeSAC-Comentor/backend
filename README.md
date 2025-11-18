@@ -1,6 +1,9 @@
 # Commento 
 
 # 시스템 아키텍쳐
+<img width="631" height="528" alt="스크린샷 2025-11-18 오후 2 52 19" src="https://github.com/user-attachments/assets/d2f624b0-e1aa-476c-915e-a5b3a1d84cba" />
+
+
 ```mermaid
 graph TB
     subgraph Client["🌐 Client Layer"]
