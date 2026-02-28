@@ -78,21 +78,24 @@ class CommentService:
             return {
                 "corrected_comment": text,
                 "is_corrected": False,
-                "reason": "수정할 내용이 없습니다."
+                "reason": "수정할 내용이 없습니다.",
+                "classification": classification,
             }
-        
+
         # 3단계: 문제 있으면 수정 생성 (느림)
         try:
             corrected = await correct_comment_text(text)
             return {
                 "corrected_comment": corrected,
                 "is_corrected": True,
-                "reason": f"감지된 문제: {', '.join(classification['problem_types'])}"
+                "reason": f"감지된 문제: {', '.join(classification['problem_types'])}",
+                "classification": classification,
             }
         except Exception as e:
             # OpenAI API 오류 시 폴백
             return {
                 "corrected_comment": text,
                 "is_corrected": False,
-                "reason": f"수정 실패: {str(e)}"
+                "reason": f"수정 실패: {str(e)}",
+                "classification": classification,
             }

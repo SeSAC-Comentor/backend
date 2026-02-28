@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Commento 테스트</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; display: flex; justify-content: center; padding: 40px 16px; gap: 20px; flex-wrap: wrap; }
+  .card { background: #fff; border-radius: 16px; padding: 32px; width: 380px; box-shadow: 0 4px 24px rgba(0,0,0,0.1); }
+  .card h2 { font-size: 16px; margin-bottom: 16px; text-align: center; }
+  .card p.desc { font-size: 13px; color: #888; margin-bottom: 20px; line-height: 1.5; text-align: center; }
+  .btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; border-radius: 8px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; margin-bottom: 10px; }
+  .btn-kakao { background: #FEE500; color: #3C1E1E; }
+  .btn-google { background: #fff; color: #333; border: 1px solid #ddd; }
+  .btn-primary { background: #4A90D9; color: #fff; }
+  .btn-danger { background: #ff4444; color: #fff; }
+  .btn-secondary { background: #888; color: #fff; }
+  .btn:hover { opacity: 0.85; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .status { margin-top: 12px; font-size: 12px; color: #666; min-height: 20px; word-break: break-all; }
+  .user-info { text-align: left; background: #f8f8f8; border-radius: 8px; padding: 12px; margin-top: 12px; font-size: 13px; line-height: 1.8; }
+  textarea { width: 100%; border: 1px solid #ddd; border-radius: 8px; padding: 12px; font-size: 14px; resize: vertical; min-height: 80px; font-family: inherit; margin-bottom: 10px; }
+  .result-box { background: #f8f8f8; border-radius: 8px; padding: 16px; margin-top: 12px; font-size: 13px; line-height: 1.7; text-align: left; }
+  .result-box .label { font-weight: 600; color: #333; }
+  .result-box .value { color: #555; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-right: 4px; }
+  .badge-red { background: #fee; color: #c00; }
+  .badge-yellow { background: #fff8e1; color: #a67c00; }
+  .badge-green { background: #e8f5e9; color: #2e7d32; }
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+  .tab { flex: 1; padding: 8px; border: none; background: #eee; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 13px; font-weight: 600; color: #888; }
+  .tab.active { background: #4A90D9; color: #fff; }
+  .history-item { background: #f8f8f8; border-radius: 8px; padding: 12px; margin-bottom: 8px; font-size: 13px; line-height: 1.6; position: relative; }
+  .history-item .time { font-size: 11px; color: #aaa; }
+  .history-item .del-btn { position: absolute; top: 8px; right: 8px; background: none; border: none; color: #ccc; cursor: pointer; font-size: 16px; }
+  .history-item .del-btn:hover { color: #f44; }
+  .empty { text-align: center; color: #aaa; padding: 40px 0; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<!-- 로그인 카드 -->
+<div class="card">
+  <h2>코멘토 시작하기</h2>
+  <p class="desc">건전한 미디어 인식을 키울 수 있도록 돕는<br>맞춤형 미디어 코치 역할을 합니다.</p>
+
+  <div id="login-buttons">
+    <button class="btn btn-kakao" onclick="loginKakao()">카카오로 시작하기</button>
+    <button class="btn btn-google" onclick="loginGoogle()">구글로 시작하기</button>
+  </div>
+
+  <div id="user-section" style="display:none;">
+    <div class="user-info" id="user-info"></div>
+    <button class="btn btn-danger" onclick="logout()">로그아웃</button>
+  </div>
+
+  <div class="status" id="status"></div>
+</div>
+
+<!-- API 테스트 카드 -->
+<div class="card">
+  <h2>API 테스트</h2>
+  <textarea id="comment-input" placeholder="댓글을 입력하세요...">여자가 무슨 코딩이야 집에나 있어</textarea>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('review', this)">검토</button>
+    <button class="tab" onclick="switchTab('correct', this)">교정</button>
+    <button class="tab" onclick="switchTab('feedback', this)">피드백</button>
+  </div>
+
+  <button class="btn btn-primary" id="api-btn" onclick="callApi()">분석하기</button>
+
+  <div id="api-result"></div>
+  <div class="status" id="api-status"></div>
+</div>
+
+<!-- 히스토리 카드 -->
+<div class="card">
+  <h2>교정 히스토리</h2>
+  <button class="btn btn-secondary" onclick="loadHistory()" style="margin-bottom:12px;">히스토리 불러오기</button>
+  <div id="history-list"><div class="empty">로그인 후 히스토리를 확인하세요</div></div>
+</div>
+
+<script>
+const API_URL = 'http://localhost:8000';
+const GOOGLE_CLIENT_ID = '239436896770-ok1qmr9j5j7g27jq5blq14e3fo9hstkn.apps.googleusercontent.com';
+const KAKAO_CLIENT_ID = '274b1cc591a9261281384fea09759920';
+const REDIRECT_URI = 'http://localhost:3000';
+
+let currentTab = 'review';
+
+function log(id, msg) { document.getElementById(id).innerText = msg; }
+
+function switchTab(tab, el) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('api-result').innerHTML = '';
+}
+
+function authHeaders() {
+  const token = localStorage.getItem('access_token');
+  return token ? { 'Authorization': `Bearer ${token}` } : {};
+}
+
+// ===== OAuth =====
+function loginGoogle() {
+  localStorage.setItem('oauth_provider', 'google');
+  const params = new URLSearchParams({
+    client_id: GOOGLE_CLIENT_ID, redirect_uri: REDIRECT_URI,
+    response_type: 'code', scope: 'openid profile',
+  });
+  window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + params;
+}
+
+function loginKakao() {
+  localStorage.setItem('oauth_provider', 'kakao');
+  const params = new URLSearchParams({
+    client_id: KAKAO_CLIENT_ID, redirect_uri: REDIRECT_URI, response_type: 'code',
+  });
+  window.location.href = 'https://kauth.kakao.com/oauth/authorize?' + params;
+}
+
+async function handleCallback() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  if (!code) return;
+  const provider = localStorage.getItem('oauth_provider') || 'google';
+  localStorage.removeItem('oauth_provider');
+  window.history.replaceState({}, '', '/');
+  log('status', `${provider} 인증 코드 수신, 토큰 교환 중...`);
+  try {
+    const resp = await fetch(`${API_URL}/api/auth/${provider}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code }),
+    });
+    if (!resp.ok) { log('status', `로그인 실패: ${(await resp.json()).detail}`); return; }
+    const data = await resp.json();
+    localStorage.setItem('access_token', data.access_token);
+    localStorage.setItem('refresh_token', data.refresh_token);
+    log('status', '로그인 성공!');
+    await showUser();
+  } catch (e) { log('status', `오류: ${e.message}`); }
+}
+
+async function showUser() {
+  const token = localStorage.getItem('access_token');
+  if (!token) return;
+  try {
+    const resp = await fetch(`${API_URL}/api/auth/me`, { headers: { 'Authorization': `Bearer ${token}` } });
+    if (!resp.ok) { localStorage.removeItem('access_token'); localStorage.removeItem('refresh_token'); return; }
+    const user = await resp.json();
+    document.getElementById('login-buttons').style.display = 'none';
+    document.getElementById('user-section').style.display = 'block';
+    document.getElementById('user-info').innerHTML = `
+      <strong>${user.nickname}</strong><br>가입: ${user.provider}<br>ID: ${user.id}
+    `;
+    log('status', '');
+  } catch (e) { log('status', `오류: ${e.message}`); }
+}
+
+function logout() {
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('refresh_token');
+  document.getElementById('login-buttons').style.display = 'block';
+  document.getElementById('user-section').style.display = 'none';
+  document.getElementById('user-info').innerHTML = '';
+  log('status', '로그아웃 완료');
+}
+
+// ===== API 호출 =====
+async function callApi() {
+  const comment = document.getElementById('comment-input').value.trim();
+  if (!comment) return;
+  const btn = document.getElementById('api-btn');
+  btn.disabled = true; btn.innerText = '분석 중...';
+  log('api-status', '');
+  document.getElementById('api-result').innerHTML = '';
+
+  try {
+    const resp = await fetch(`${API_URL}/api/${currentTab}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ comment }),
+    });
+    if (!resp.ok) { log('api-status', `오류: ${resp.status}`); return; }
+    const data = await resp.json();
+    renderResult(data);
+  } catch (e) {
+    log('api-status', `오류: ${e.message}`);
+  } finally {
+    btn.disabled = false; btn.innerText = '분석하기';
+  }
+}
+
+function severityBadge(s) {
+  if (s === '높음') return '<span class="badge badge-red">높음</span>';
+  if (s === '중간') return '<span class="badge badge-yellow">중간</span>';
+  return '<span class="badge badge-green">낮음</span>';
+}
+
+function renderResult(data) {
+  const box = document.getElementById('api-result');
+
+  if (currentTab === 'review') {
+    box.innerHTML = `<div class="result-box">
+      <span class="label">문제 여부:</span>
+      <span class="value">${data.is_problematic ? '<span class="badge badge-red">문제 있음</span>' : '<span class="badge badge-green">문제 없음</span>'}</span>
+    </div>`;
+  }
+
+  else if (currentTab === 'correct') {
+    box.innerHTML = `<div class="result-box">
+      <span class="label">교정 결과:</span><br>
+      <span class="value">${data.corrected_comment}</span>
+    </div>`;
+  }
+
+  else if (currentTab === 'feedback') {
+    const types = (data.problem_types || []).map(t => `<span class="badge badge-yellow">${t}</span>`).join(' ');
+    box.innerHTML = `<div class="result-box">
+      <span class="label">문제 여부:</span> ${data.is_problematic ? '<span class="badge badge-red">문제 있음</span>' : '<span class="badge badge-green">문제 없음</span>'}<br>
+      <span class="label">심각도:</span> ${severityBadge(data.severity)}<br>
+      <span class="label">신뢰도:</span> <span class="value">${(data.confidence * 100).toFixed(1)}%</span><br>
+      <span class="label">문제 유형:</span> ${types || '-'}<br>
+      <span class="label">사유:</span> <span class="value">${data.reason}</span>
+    </div>`;
+  }
+}
+
+// ===== 히스토리 =====
+async function loadHistory() {
+  const token = localStorage.getItem('access_token');
+  if (!token) { document.getElementById('history-list').innerHTML = '<div class="empty">로그인이 필요합니다</div>'; return; }
+
+  try {
+    const resp = await fetch(`${API_URL}/api/history?size=50`, { headers: { 'Authorization': `Bearer ${token}` } });
+    if (resp.status === 401) { document.getElementById('history-list').innerHTML = '<div class="empty">로그인이 필요합니다</div>'; return; }
+    const data = await resp.json();
+    if (data.items.length === 0) {
+      document.getElementById('history-list').innerHTML = '<div class="empty">히스토리가 없습니다</div>';
+      return;
+    }
+    document.getElementById('history-list').innerHTML = data.items.map(item => `
+      <div class="history-item" id="h-${item.id}">
+        <button class="del-btn" onclick="deleteHistory('${item.id}')">&times;</button>
+        <span class="label">원본:</span> ${item.original_comment}<br>
+        <span class="label">교정:</span> ${item.corrected_comment}<br>
+        ${item.severity ? `<span class="label">심각도:</span> ${severityBadge(item.severity)}<br>` : ''}
+        <span class="time">${new Date(item.created_at).toLocaleString('ko-KR')}</span>
+      </div>
+    `).join('');
+  } catch (e) {
+    document.getElementById('history-list').innerHTML = `<div class="empty">오류: ${e.message}</div>`;
+  }
+}
+
+async function deleteHistory(id) {
+  const token = localStorage.getItem('access_token');
+  if (!token) return;
+  try {
+    await fetch(`${API_URL}/api/history/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+    document.getElementById(`h-${id}`)?.remove();
+    if (!document.querySelector('.history-item')) {
+      document.getElementById('history-list').innerHTML = '<div class="empty">히스토리가 없습니다</div>';
+    }
+  } catch (e) { alert(`삭제 실패: ${e.message}`); }
+}
+
+// 페이지 로드
+handleCallback();
+showUser();
+</script>
+</body>
+</html>

@@ -33,5 +33,5 @@ ENV PATH="/app/.venv/bin:$PATH" \
 # 포트
 EXPOSE 8000
 
-# 실행
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# 실행: 마이그레이션 후 서버 기동
+CMD ["sh", "-c", "alembic upgrade head && uvicorn src.main:app --host 0.0.0.0 --port 8000"]

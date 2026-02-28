@@ -1,6 +1,16 @@
 # Commento Backend
 유튜브 댓글을 입력받아 혐오/공격성/차별 표현을 분류하고, 문제가 감지되면 AI가 댓글을 교정 및 교육적 피드백을 제공하는 백엔드 서버입니다.
 
+## Docker Compose로 실행하기
+
+프론트엔드 개발 시 백엔드를 간편하게 띄울 수 있습니다. 자세한 내용은 [DOCKER_GUIDE.md](./DOCKER_GUIDE.md)를 참고하세요.
+
+```bash
+docker-compose up
+```
+
+---
+
 # 시스템 아키텍쳐
 <img width="631" height="528" alt="스크린샷 2025-11-18 오후 2 52 19" src="https://github.com/user-attachments/assets/d2f624b0-e1aa-476c-915e-a5b3a1d84cba" />
 
